@@ -9,12 +9,30 @@ export const Link = objectType({
     t.nonNull.string("url");
     t.field("postedBy", {
       type: "User",
-      resolve(parent, args, context) {
-        return context.prisma.link
+      async resolve(parent, args, context) {
+        const user = await context.prisma.link
           .findUnique({
             where: { id: parent.id },
           })
           .postedBy();
+
+        if (!user) return null;
+
+        // Map nullable fields to non-nullable or provide defaults
+        return {
+          id: user.id,
+          email: user.email ?? "",
+          name: user.name ?? "",
+        };
+      },
+    });
+
+    t.nonNull.list.nonNull.field("voters", {
+      type: "User",
+      resolve(parent, args, context) {
+        return context.prisma.link
+          .findUnique({ where: { id: parent.id } })
+          .voters();
       },
     });
   },
